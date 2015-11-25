@@ -6,6 +6,8 @@
 #include "proc.h"
 #include "x86.h"
 #include "syscall.h"
+#include "spinlock.h"
+struct spinlock numslock;
 int syscallnum=0;
 
 // User code makes a system call with INT T_SYSCALL.
@@ -137,7 +139,9 @@ syscall(void)
 
   num = proc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    syscallnum++; /*increment the syscall counter*/
+    acquire(&numslock);
+	syscallnum++; /*increment the syscall counter*/
+    release(&numslock);
     proc->tf->eax = syscalls[num]();
   } else {
     cprintf("%d %s: unknown sys call %d\n",
